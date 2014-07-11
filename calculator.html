@@ -18,24 +18,47 @@
     const GramPrice             = TreePrice / TreeMass;
 
     const PAPER_TYPES = [
-      { id: 1,  name: "20# Bond/Writing/Ledger (75 gsm)",  density: 75  },
-      { id: 2,  name: "24# Bond/Writing/Ledger (90 gsm)",  density: 90  },
-      { id: 3,  name: "28# Bond/Writing/Ledger (105 gsm)", density: 105 },
-      { id: 4,  name: "32# Bond/Writing/Ledger (120 gsm)", density: 120 },
-      { id: 5,  name: "50# Book/Text/Offset (75 gsm)",     density: 75  },
-      { id: 6,  name: "60# Book/Text/Offset (90 gsm)",     density: 90  },
-      { id: 7,  name: "70# Book/Text/Offset (105 gsm)",    density: 105 },
-      { id: 8,  name: "80# Book/Text/Offset (120 gsm)",    density: 120 },
-      { id: 9,  name: "100# Text (150 gsm)",               density: 150 },
-      { id: 10, name: "67# Bristol (145 gsm)",             density: 145 },
-      { id: 11, name: "90# Index (165 gsm)",               density: 165 },
-      { id: 12, name: "111# Index (200 gsm)",              density: 200 },
-      { id: 13, name: "140# Index (255 gsm)",              density: 255 },
-      { id: 14, name: "65# Cover (175 gsm)",               density: 175 },
-      { id: 15, name: "80# Cover (215 gsm)",               density: 215 },
-      { id: 16, name: "100# Cover (275 gsm)",              density: 275 },
-      { id: 17, name: "130# Cover (350 gsm)",              density: 350 }
-    ]
+      { id: 1,  name: "20# Bond/Writing/Ledger (74 gsm)",       density:   74 },
+      { id: 2,  name: "27.7# Newsprint Uncoated News (45 gsm)", density:   45 },
+      { id: 3,  name: "32# Hibrite Uncoated News (52 gsm)",     density:   52 },
+      { id: 4,  name: "35# SCA Calendared Text (52 gsm)",       density:   52 },
+      { id: 5,  name: "42.5# 84 Bright Uncoated Text (63 gsm)", density:   63 },
+      { id: 6,  name: "50# Opaque Uncoated Text (74 gsm)",      density:   74 },
+      { id: 7,  name: "60# Opaque Uncoated Text (89 gsm)",      density:   89 },
+      { id: 8,  name: "50# Offset Uncoated Text (74 gsm)",      density:   74 },
+      { id: 9,  name: "60# Offset Uncoated Text (89 gsm)",      density:   89 },
+      { id: 10, name: "70# Offset Uncoated Text (104 gsm)",     density:  104 },
+      { id: 11, name: "78# BRC Uncoated Text (115 gsm)",        density:  115 },
+      { id: 12, name: "32# #5 Gloss Text (47 gsm)",             density:   47 },
+      { id: 13, name: "34# #5 Gloss Text (50 gsm)",             density:   50 },
+      { id: 14, name: "36# #5 Gloss Text (53 gsm)",             density:   53 },
+      { id: 15, name: "38# #5 Gloss Text (56 gsm)",             density:   56 },
+      { id: 16, name: "40# #5 Gloss Text (59 gsm)",             density:   59 },
+      { id: 17, name: "45# #5 Gloss Text (67 gsm)",             density:   67 },
+      { id: 18, name: "50# #5 Gloss Text (74 gsm)",             density:   74 },
+      { id: 19, name: "45# #5 Matte Text (67 gsm)",             density:   67 },
+      { id: 20, name: "38# #4 Gloss Text (56 gsm)",             density:   56 },
+      { id: 21, name: "40# #4 Gloss Text (59 gsm)",             density:   59 },
+      { id: 22, name: "45# #4 Gloss Text (67 gsm)",             density:   67 },
+      { id: 23, name: "50# #4 Gloss Text (74 gsm)",             density:   74 },
+      { id: 24, name: "45# #3 Gloss Text (67 gsm)",             density:   67 },
+      { id: 25, name: "50# #3 Gloss Text (74 gsm)",             density:   74 },
+      { id: 26, name: "60# #3 Gloss Text (89 gsm)",             density:   89 },
+      { id: 27, name: "70# #3 Gloss Text (104 gsm)",            density:  104 },
+      { id: 28, name: "80# #3 Gloss Text (118 gsm)",            density:  118 },
+      { id: 29, name: "100# #3 Gloss Text (148 gsm)",           density:  148 },
+      { id: 30, name: "45# #3 Matte Text (67 gsm)",             density:   67 },
+      { id: 31, name: "50# #3 Matte Text (74 gsm)",             density:   74 },
+      { id: 32, name: "60# #3 Matte Text (89 gsm)",             density:   89 },
+      { id: 33, name: "70# #3 Matte Text (104 gsm)",            density:  104 },
+      { id: 34, name: "80# #3 Matte Text (118 gsm)",            density:  118 },
+      { id: 35, name: "99# #3 Matte Text (146 gsm)",            density:  146 },
+      { id: 36, name: "100# #3 Matte Text (148 gsm)",           density:  148 },
+      { id: 37, name: "80# #2 Gloss Cover (216 gsm)",           density:  216 },
+      { id: 38, name: "100# #2 Gloss Cover (270 gsm)",          density:  270 },
+      { id: 39, name: "80# #2 Matte Cover (216 gsm)",           density:  216 },
+      { id: 40, name: "100# #2 Matte Cover (270 gsm)",          density:  270 }
+    ];
   </script>
 
   <script type="text/javascript">
@@ -259,8 +282,8 @@
 
       window.App = new AppView;
 
-      Papers.add({count: 2,  width: 0.212725, height: 0.276225, paper_type_id: 15});
-      Papers.add({count: 40, width: 0.212725, height: 0.276225, paper_type_id: 6});
+      Papers.add({count: 2,  width: 0.212725, height: 0.276225, paper_type_id: 37});
+      Papers.add({count: 40, width: 0.212725, height: 0.276225, paper_type_id: 26});
     });
   </script>
 </head>
