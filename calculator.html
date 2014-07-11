@@ -80,7 +80,7 @@
           papers:   $('[data-paper]').map(function() {
             return {
               density: parseFloat($(this).find('[name="density"]').val()),
-              count: parseInt($(this).find('[name="count"]').val().replace(/[^\d.-]/g, '')),
+              count: (parseInt($(this).find('[name="count"]').val().replace(/[^\d.-]/g, '')) || 0) / 2
             }
           }).get()
         });
@@ -164,7 +164,7 @@
               </select>
             </div>
             <div class="col-sm-3">
-              <input name="count" value="2" class="form-control" type="text" />
+              <input name="count" value="4" class="form-control" type="text" />
             </div>
             <div class="col-sm-2">
               <p class="help-block">pages per unit</p>
@@ -185,7 +185,7 @@
               </select>
             </div>
             <div class="col-sm-3">
-              <input name="count" value="40" class="form-control" type="text" />
+              <input name="count" value="80" class="form-control" type="text" />
             </div>
             <div class="col-sm-2">
               <p class="help-block">pages per unit</p>
@@ -252,7 +252,7 @@
       <thead>
         <tr>
           <td></td>
-          <td style="text-align: right"><strong>Count</strong></td>
+          <td style="text-align: right"><strong>Qty</strong></td>
           <td style="text-align: right"><strong>Area (m<sup>2</sup>)</strong></td>
           <td style="text-align: right"><strong>Density (g/m<sup>2</sup>)</strong></td>
           <td style="text-align: right"><strong>Mass (g)</strong></td>
