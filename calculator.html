@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore.js"></script>
+
+  <script type="text/javascript">
+    function inchesToMeters(inches) {
+      return inches * 0.0254
+    }
+
+    function numberWithCommas(n) {
+      var parts=n.toString().split(".");
+      return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (parts[1] ? "." + parts[1] : "");
+    }
+  </script>
+
+  <script type="text/javascript">
+    const TreeMass = 37136.2044924;
+    const GramPrice = 0.0000201951;
+
+    // Quote {
+    //     width    float
+    //     height   float
+    //     quantity int
+    //     papers   [] Paper
+    //     area     float
+    //     mass     float
+    //     unitMass float
+    //     trees    float
+    //     price    float
+    // }
+
+    Quote = function(params) {
+      var self = this;
+      this.width    = parseFloat(params.width)  || 0.0;
+      this.height   = parseFloat(params.height) || 0.0;
+      this.quantity = parseInt(params.quantity) || 0;
+      this.papers   = params.papers.map(function(p) {
+        p.mass = self.area * p.density * p.count;
+        return p;
+      });
+    };
+
+    Quote.prototype = {
+      get area()  { return this.width * this.height },
+      get mass()  { return this.unitMass * this.quantity },
+      get trees() { return this.mass / TreeMass },
+      get price() { return this.mass * GramPrice },
+
+      get unitMass() {
+        return this.papers.map(function(paper) {
+          return paper.mass
+        }).reduce(function(sum, el) {
+          return sum + el
+        }, 0);
+      }
+    };
+
+    $(function() {
+      var $form = $('#calculator');
+
+      $form.submit(function(event) {
+        event.preventDefault();
+        calculate();
+        return false;
+      });
+
+      $form.find("input,select").change(function(event) {
+        calculate();
+      });
+
+      function calculate() {
+        window.quote = new Quote({
+          width:    inchesToMeters(parseFloat($('[name="width"]').val().replace(/[^\d.-]/g, ''))),
+          height:   inchesToMeters(parseFloat($('[name="height"]').val().replace(/[^\d.-]/g, ''))),
+          quantity: parseInt($('[name="quantity"]').val().replace(/[^\d.-]/g, '')),
+          papers:   $('[data-paper]').map(function() {
+            return {
+              density: parseFloat($(this).find('[name="density"]').val()),
+              count: parseInt($(this).find('[name="count"]').val().replace(/[^\d.-]/g, '')),
+            }
+          }).get()
+        });
+
+        print(quote);
+      }
+
+      var template = _.template($("#quote-template").html());
+
+      function print(quote) {
+        $('#quote').html("<img src='http://f.cl.ly/items/1Y2I3A3r2X2Y340v0f2R/712.GIF'>");
+
+        setTimeout(function() {
+          $('#quote').html(template(quote));
+        }, 1500);
+      }
+
+      calculate();
+    });
+  </script>
+</head>
+<body style="padding: 50px;">
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 col-lg-offset-2">
+      <img src="https://printreleaf-exchange.s3.amazonaws.com/assets/logos/printreleaf-200x55-02b01b3047fafdff3de86e4cd4e6f199.png" />
+      <br /> <br /> <br />
+
+      <form id="calculator">
+        <fieldset>
+          <legend>Job Specs</legend>
+
+          <div class="row form-group">
+            <div class="col-sm-2">
+              <label>Trim size</label>
+            </div>
+            <div class="col-sm-4">
+              <input name="width" value="8.3750" class="form-control" type="text" />
+              <p class="help-block">width (inches)</p>
+            </div>
+            <div class="col-sm-4">
+              <input name="height" value="10.875" class="form-control" type="text" />
+              <p class="help-block">height (inches)</p>
+            </div>
+          </div>
+          <div class="row form-group">
+            <div class="col-sm-2">
+              <label>Quantity</label>
+            </div>
+            <div class="col-sm-4">
+              <input name="quantity" value="10,000" class="form-control" type="text" />
+              <p class="help-block">ex. 10,000</p>
+            </div>
+          </div>
+
+          <legend></legend>
+
+          <div class="row form-group">
+            <div class="col-sm-2">
+              <label>&nbsp;</label>
+            </div>
+            <div class="col-sm-5">
+              <label>Density</label>
+            </div>
+            <div class="col-sm-3">
+              <label>Page count</label>
+            </div>
+          </div>
+
+          <div class="row form-group" data-paper>
+            <div class="col-sm-2">
+              <label>Paper 1</label>
+            </div>
+            <div class="col-sm-5">
+              <select class="form-control" name="density">
+                <option value="0">--</option>
+                <option value="73.95">20# bond / 50# text (73.95 gsm)</option>
+                <option value="88.74">24# bond / 60# text (88.74 gsm)</option>
+                <option value="103.53">28# bond / 70# text (103.53 gsm)</option>
+                <option value="118.32" selected>32# bond / 80# text (118.32 gsm)</option>
+              </select>
+            </div>
+            <div class="col-sm-3">
+              <input name="count" value="2" class="form-control" type="text" />
+            </div>
+            <div class="col-sm-2">
+              <p class="help-block">pages per unit</p>
+            </div>
+          </div>
+
+          <div class="row form-group" data-paper>
+            <div class="col-sm-2">
+              <label>Paper 2</label>
+            </div>
+            <div class="col-sm-5">
+              <select class="form-control" name="density">
+                <option value="0">--</option>
+                <option value="73.95">20# bond / 50# text (73.95 gsm)</option>
+                <option value="88.74" selected>24# bond / 60# text (88.74 gsm)</option>
+                <option value="103.53">28# bond / 70# text (103.53 gsm)</option>
+                <option value="118.32">32# bond / 80# text (118.32 gsm)</option>
+              </select>
+            </div>
+            <div class="col-sm-3">
+              <input name="count" value="40" class="form-control" type="text" />
+            </div>
+            <div class="col-sm-2">
+              <p class="help-block">pages per unit</p>
+            </div>
+          </div>
+
+          <div class="row form-group" data-paper>
+            <div class="col-sm-2">
+              <label>Paper 3</label>
+            </div>
+            <div class="col-sm-5">
+              <select class="form-control" name="density">
+                <option value="0" selected>--</option>
+                <option value="73.95">20# bond / 50# text (73.95 gsm)</option>
+                <option value="88.74">24# bond / 60# text (88.74 gsm)</option>
+                <option value="103.53">28# bond / 70# text (103.53 gsm)</option>
+                <option value="118.32">32# bond / 80# text (118.32 gsm)</option>
+              </select>
+            </div>
+            <div class="col-sm-3">
+              <input name="count" value="0" class="form-control" type="text" />
+            </div>
+            <div class="col-sm-2">
+              <p class="help-block">pages per unit</p>
+            </div>
+          </div>
+        </fieldset>
+
+
+        <fieldset>
+          <legend></legend>
+          <div class="row form-group">
+            <div class="col-sm-2">
+              <button type="submit" class="btn btn-success btn-lg">Calculate</button>
+            </div>
+            <div id="quote" class="col-sm-10">
+            </div>
+          </div>
+        </fieldset>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+
+
+<script type="text/template" id="quote-template">
+  <div class="well">
+    <h3>Quote</h3>
+
+    <table class="table">
+      <tr>
+        <td><strong>Trim size</strong></td>
+        <td><%= width.toFixed(4) %> m &times; <%= height.toFixed(4) %> m</td>
+      </tr>
+      <tr>
+        <td><strong>Surface area</strong></td>
+        <td><%= area.toFixed(4) %> m<sup>2</sup></td>
+      </tr>
+    </table>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <td></td>
+          <td style="text-align: right"><strong>Count</strong></td>
+          <td style="text-align: right"><strong>Area (m<sup>2</sup>)</strong></td>
+          <td style="text-align: right"><strong>Density (g/m<sup>2</sup>)</strong></td>
+          <td style="text-align: right"><strong>Mass (g)</strong></td>
+        </tr>
+      </thead>
+      <tr>
+        <td>Paper 1</td>
+        <td style="text-align: right"><%= papers[0].count %></td>
+        <td style="text-align: right"><%= area.toFixed(4) %></td>
+        <td style="text-align: right"><%= papers[0].density.toFixed(4) %></td>
+        <td style="text-align: right"><%= papers[0].mass.toFixed(4) %></td>
+      </tr>
+      <tr>
+        <td>Paper 2</td>
+        <td style="text-align: right"><%= papers[1].count %></td>
+        <td style="text-align: right"><%= area.toFixed(4) %></td>
+        <td style="text-align: right"><%= papers[1].density.toFixed(4) %></td>
+        <td style="text-align: right"><%= papers[1].mass.toFixed(4) %></td>
+      </tr>
+      <tr>
+        <td>Paper 3</td>
+        <td style="text-align: right"><%= papers[2].count %></td>
+        <td style="text-align: right"><%= area.toFixed(4) %></td>
+        <td style="text-align: right"><%= papers[2].density.toFixed(4) %></td>
+        <td style="text-align: right"><%= papers[2].mass.toFixed(4) %></td>
+      </tr>
+      <tfoot>
+        <tr>
+          <td colspan="5" style="text-align: right">
+            <%= unitMass.toFixed(4) %>
+          </td>
+        </tr>
+      <tfoot>
+    </table>
+
+    <table class="table" style="width: 60%;">
+      <tr>
+        <td><strong>Quantity</strong></td>
+        <td style="text-align: right"><%= numberWithCommas(quantity) %> units</td>
+      </tr>
+      <tr>
+        <td><strong>Unit mass</strong></td>
+        <td style="text-align: right"><%= numberWithCommas(unitMass.toFixed(4)) %> g</td>
+      </tr>
+      <tr>
+        <td><strong>Total mass</strong></td>
+        <td style="text-align: right"><%= numberWithCommas(mass.toFixed(4)) %> g</td>
+      </tr>
+      <tr>
+        <td><strong>Trees</strong></td>
+        <td style="text-align: right"><%= numberWithCommas(trees.toFixed(4)) %></td>
+      </tr>
+      <tr>
+        <td><strong>Price</strong></td>
+        <td style="text-align: right">$<%= numberWithCommas(price.toFixed(2)) %></td>
+      </tr>
+    </table>
+
+
+  </div>
+</script>
+
+</body>
+</html>
+
