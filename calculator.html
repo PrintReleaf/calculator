@@ -12,7 +12,7 @@
     const NormalizedPageArea    = 0.216 * 0.279; // 8.5" x 11"
     const NormalizedPageDensity = 74;            // (g/m^2) 20# bond
     const NormalizedPageMass    = NormalizedPageDensity * NormalizedPageArea;
-    const PricePerPage          = 0.00009;
+    const PricePerPage          = 0.000072;
     const TreeMass              = 8333 * NormalizedPageMass;
     const TreePrice             = 8333 * PricePerPage;
     const GramPrice             = TreePrice / TreeMass;
@@ -66,7 +66,9 @@
       area: function(w, h)    { return (parseFloat(w) || 0) * (parseFloat(h) || 0) },
       mass: function(a, d, n) { return (parseFloat(a) || 0) * (parseFloat(d) || 0) * (parseInt(n) || 0) },
       inchesToMeters: function(inches) { return inches * 0.0254 },
-      metersToInches: function(meters) { return meters * 39.3701 }
+      metersToInches: function(meters) { return meters * 39.3701 },
+      gramsToPounds:  function(grams)  { return grams  * 0.00220462 },
+      poundsToGrams:  function(pounds) { return pounds * 453.592 }
     }
 
     var Format = {
@@ -89,7 +91,9 @@
             height: 0.2794,             // 11 inches
             paper_type_id: 1,
             density: 0,
-            area: 0
+            area: 0,
+            mass: 0,
+            weight: 0
           };
         },
 
@@ -103,11 +107,13 @@
           var area    = Calc.area(this.get("width"), this.get("height"));
           var density = _.findWhere(PAPER_TYPES, {id: parseInt(this.get("paper_type_id"))}).density;
           var mass    = Calc.mass(area, density, this.get("count"));
+          var weight  = Calc.gramsToPounds(mass);
 
           this.set({
             area:    area,
             density: density,
-            mass:    mass
+            mass:    mass,
+            weight:  weight
           });
         }
       });
@@ -182,37 +188,43 @@
       var Quote = Backbone.Model.extend({
         defaults: function() {
           return {
-            quantity: 0,
-            unitMass: 0,
-            mass:     0,
-            trees:    0,
-            price:    0,
-            papers:   []
+            quantity:   0,
+            unitMass:   0,
+            unitWeight: 0,
+            mass:       0,
+            weight:     0,
+            trees:      0,
+            price:      0,
+            papers:     []
           };
         },
 
         initialize: function(attributes, options) {
           this.job = options.job;
           this.papers = options.papers;
-          this.listenTo(this.job, 'change', this.calculate);
-          this.listenTo(this.job, 'all', this.calculate);
+          this.listenTo(this.job,    'change', this.calculate);
+          this.listenTo(this.job,    'all',    this.calculate);
           this.listenTo(this.papers, 'change', this.calculate);
-          this.listenTo(this.papers, 'all', this.calculate);
+          this.listenTo(this.papers, 'all',    this.calculate);
         },
 
         calculate: function() {
-          var unitMass = this.papers.pluck("mass").reduce(function(sum, el) { return sum + el }, 0);
-          var mass     = unitMass * this.job.get("quantity");
-          var trees    = mass / TreeMass;
-          var price    = mass * GramPrice;
+          var unitMass   = this.papers.pluck("mass").reduce(function(sum, el) { return sum + el }, 0);
+          var unitWeight = Calc.gramsToPounds(unitMass);
+          var mass       = unitMass * this.job.get("quantity");
+          var weight     = Calc.gramsToPounds(mass);
+          var trees      = mass / TreeMass;
+          var price      = mass * GramPrice;
 
           this.set({
-            quantity: this.job.get("quantity"),
-            unitMass: unitMass,
-            mass:     mass,
-            trees:    trees,
-            price:    price,
-            papers:   this.papers.map(function(p) { return p.toJSON() })
+            quantity:   this.job.get("quantity"),
+            unitMass:   unitMass,
+            unitWeight: unitWeight,
+            mass:       mass,
+            weight:     weight,
+            trees:      trees,
+            price:      price,
+            papers:     this.papers.map(function(p) { return p.toJSON() })
           });
         },
       });
@@ -268,8 +280,8 @@
         },
 
         initialize: function() {
-          this.job = new Job;
-          this.quote = new Quote({}, { job: this.job, papers: Papers });
+          this.job        = new Job;
+          this.quote      = new Quote({}, { job: this.job, papers: Papers });
           this.jobView    = new JobView({ model: this.job });
           this.papersView = new PapersView;
           this.quoteView  = new QuoteView({ model: this.quote });
@@ -291,7 +303,7 @@
 <div class="container">
   <div class="row">
     <div class="col-lg-12">
-      <img src="https://printreleaf-exchange.s3.amazonaws.com/assets/logos/printreleaf-200x55-02b01b3047fafdff3de86e4cd4e6f199.png" />
+      <img src="https://printreleaf.s3.amazonaws.com/assets/logos/printreleaf-200x55-02b01b3047fafdff3de86e4cd4e6f199.png" />
       <br /> <br /> <br />
 
       <div id="calculatorapp">
@@ -399,6 +411,7 @@
           <td style="text-align: right"><strong>Area (m<sup>2</sup>)</strong></td>
           <td style="text-align: right"><strong>Density (g/m<sup>2</sup>)</strong></td>
           <td style="text-align: right"><strong>Mass (g)</strong></td>
+          <td style="text-align: right"><strong>Weight (lbs)</strong></td>
         </tr>
       </thead>
       <tbody>
@@ -411,6 +424,7 @@
             <td style="text-align: right"><%= paper.area.toFixed(4) %></td>
             <td style="text-align: right"><%= Format.numberWithCommas(paper.density.toFixed(3)) %></td>
             <td style="text-align: right"><%= Format.numberWithCommas(paper.mass.toFixed(3)) %></td>
+            <td style="text-align: right"><%= Format.numberWithCommas(paper.weight.toFixed(3)) %></td>
           </tr>
         <% }); %>
       </tbody>
@@ -429,12 +443,20 @@
         <td style="text-align: right"><%= Format.numberWithCommas(quantity) %> units</td>
       </tr>
       <tr>
-        <td><strong>Unit mass</strong></td>
+        <td><strong>Unit Mass</strong></td>
         <td style="text-align: right"><%= Format.numberWithCommas(unitMass.toFixed(3)) %> g</td>
       </tr>
       <tr>
-        <td><strong>Total mass</strong></td>
+        <td><strong>Unit Weight</strong></td>
+        <td style="text-align: right"><%= Format.numberWithCommas(unitWeight.toFixed(3)) %> lbs</td>
+      </tr>
+      <tr>
+        <td><strong>Total Mass</strong></td>
         <td style="text-align: right"><%= Format.numberWithCommas(mass.toFixed(3)) %> g</td>
+      </tr>
+      <tr>
+        <td><strong>Total Weight</strong></td>
+        <td style="text-align: right"><%= Format.numberWithCommas(weight.toFixed(3)) %> lbs</td>
       </tr>
       <tr>
         <td><strong>Trees</strong></td>
