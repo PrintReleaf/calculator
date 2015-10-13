@@ -193,6 +193,7 @@
             unitWeight: 0,
             mass:       0,
             weight:     0,
+            pages:      0,
             trees:      0,
             price:      0,
             papers:     []
@@ -213,6 +214,7 @@
           var unitWeight = Calc.gramsToPounds(unitMass);
           var mass       = unitMass * this.job.get("quantity");
           var weight     = Calc.gramsToPounds(mass);
+          var pages      = mass / NormalizedPageMass;
           var trees      = mass / TreeMass;
           var price      = mass * GramPrice;
 
@@ -222,6 +224,7 @@
             unitWeight: unitWeight,
             mass:       mass,
             weight:     weight,
+            pages:      pages,
             trees:      trees,
             price:      price,
             papers:     this.papers.map(function(p) { return p.toJSON() })
@@ -457,6 +460,10 @@
       <tr>
         <td><strong>Total Weight</strong></td>
         <td style="text-align: right"><%= Format.numberWithCommas(weight.toFixed(3)) %> lbs</td>
+      </tr>
+      <tr>
+        <td><strong>Normalized Pages</strong></td>
+        <td style="text-align: right"><%= Format.numberWithCommas(pages.toFixed(0)) %> pgs</td>
       </tr>
       <tr>
         <td><strong>Trees</strong></td>
