@@ -64,11 +64,7 @@
   <script type="text/javascript">
     var Calc = {
       area: function(w, h)    { return (parseFloat(w) || 0) * (parseFloat(h) || 0) },
-      mass: function(a, d, n) { return (parseFloat(a) || 0) * (parseFloat(d) || 0) * (parseInt(n) || 0) },
-      inchesToMeters: function(inches) { return inches * 0.0254 },
-      metersToInches: function(meters) { return meters * 39.3701 },
-      gramsToPounds:  function(grams)  { return grams  * 0.00220462 },
-      poundsToGrams:  function(pounds) { return pounds * 453.592 }
+      mass: function(a, d, n) { return (parseFloat(a) || 0) * (parseFloat(d) || 0) * (parseInt(n) || 0) }
     }
 
     var Format = {
@@ -87,8 +83,8 @@
           return {
             id: 0,
             count: 0,
-            width: 0.21589999999999998, // 8.5 inches
-            height: 0.2794,             // 11 inches
+            width: 0.212725,
+            height: 0.276225,
             paper_type_id: 1,
             density: 0,
             area: 0,
@@ -142,8 +138,8 @@
         capture: function() {
           this.model.update({
             count:  parseInt(this.$('[name="count"]').val().replace(/[^\d.-]/g, '') || 0) / 2,
-            width:  Calc.inchesToMeters(parseFloat(this.$('[name="width"]').val().replace(/[^\d.-]/g, '')), 0.0),
-            height: Calc.inchesToMeters(parseFloat(this.$('[name="height"]').val().replace(/[^\d.-]/g, '')), 0.0),
+            width:  parseFloat(this.$('[name="width"]').val().replace(/[^\d.-]/g, '')),
+            height: parseFloat(this.$('[name="height"]').val().replace(/[^\d.-]/g, '')),
             paper_type_id: parseInt(this.$('[name="paper_type_id"]').val(), 0),
           })
         },
@@ -321,7 +317,7 @@
                 <label>Density</label>
               </div>
               <div class="col-sm-5">
-                <label>Trim Size <small style="opacity: 0.6">(W&times;H inches)</small></label>
+                <label>Trim Size <small style="opacity: 0.6">(W&times;H meters)</small></label>
               </div>
             </div>
 
@@ -369,10 +365,10 @@
       </select>
     </div>
     <div class="col-sm-2">
-      <input name="width" value="<%= Calc.metersToInches(width).toFixed(4) %>" class="form-control" type="text" />
+      <input name="width" value="<%= width.toFixed(4) %> m" class="form-control" type="text" />
     </div>
     <div class="col-sm-2">
-      <input name="height" value="<%= Calc.metersToInches(height).toFixed(4) %>" class="form-control" type="text" />
+      <input name="height" value="<%= height.toFixed(4) %> m" class="form-control" type="text" />
     </div>
     <div class="col-sm-1">
       <p class="form-control-static"><a href="#" class="js-remove">remove</a></p>
@@ -420,13 +416,6 @@
           </tr>
         <% }); %>
       </tbody>
-      <tfoot>
-        <tr>
-          <td colspan="1000" style="text-align: right">
-            <%= Format.numberWithCommas(unitMass.toFixed(3)) %>
-          </td>
-        </tr>
-      <tfoot>
     </table>
 
     <table class="table" style="width: 60%;">
@@ -436,11 +425,11 @@
       </tr>
       <tr>
         <td><strong>Unit Mass</strong></td>
-        <td style="text-align: right"><%= Format.numberWithCommas(unitMass.toFixed(3)) %> g</td>
+        <td style="text-align: right"><%= Format.numberWithCommas((unitMass / 1000).toFixed(3)) %> kg</td>
       </tr>
       <tr>
         <td><strong>Total Mass</strong></td>
-        <td style="text-align: right"><%= Format.numberWithCommas(mass.toFixed(3)) %> g</td>
+        <td style="text-align: right"><%= Format.numberWithCommas((mass / 1000).toFixed(2)) %> kg</td>
       </tr>
       <tr>
         <td><strong>Normalized Pages</strong></td>
