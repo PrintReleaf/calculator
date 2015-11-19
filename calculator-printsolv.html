@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore.js"></script>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/backbone-localstorage.js/1.1.9/backbone.localStorage-min.js"></script>
+
+  <script type="text/javascript">
+    const NormalizedPageArea    = 0.216 * 0.279; // 8.5" x 11"
+    const NormalizedPageDensity = 74;            // (g/m^2) 20# bond
+    const NormalizedPageMass    = NormalizedPageDensity * NormalizedPageArea;
+    const PricePerPage          = 0.000168;
+    const TreeMass              = 8333 * NormalizedPageMass;
+    const TreePrice             = 8333 * PricePerPage;
+    const GramPrice             = TreePrice / TreeMass;
+
+    const PAPER_TYPES = [
+      { id: 1,  name: "20# Bond/Writing/Ledger (74 gsm)",       density:   74 },
+      { id: 2,  name: "27.7# Newsprint Uncoated News (45 gsm)", density:   45 },
+      { id: 3,  name: "32# Hibrite Uncoated News (52 gsm)",     density:   52 },
+      { id: 4,  name: "35# SCA Calendared Text (52 gsm)",       density:   52 },
+      { id: 5,  name: "42.5# 84 Bright Uncoated Text (63 gsm)", density:   63 },
+      { id: 6,  name: "50# Opaque Uncoated Text (74 gsm)",      density:   74 },
+      { id: 7,  name: "60# Opaque Uncoated Text (89 gsm)",      density:   89 },
+      { id: 8,  name: "50# Offset Uncoated Text (74 gsm)",      density:   74 },
+      { id: 9,  name: "60# Offset Uncoated Text (89 gsm)",      density:   89 },
+      { id: 10, name: "70# Offset Uncoated Text (104 gsm)",     density:  104 },
+      { id: 11, name: "78# BRC Uncoated Text (115 gsm)",        density:  115 },
+      { id: 12, name: "32# #5 Gloss Text (47 gsm)",             density:   47 },
+      { id: 13, name: "34# #5 Gloss Text (50 gsm)",             density:   50 },
+      { id: 14, name: "36# #5 Gloss Text (53 gsm)",             density:   53 },
+      { id: 15, name: "38# #5 Gloss Text (56 gsm)",             density:   56 },
+      { id: 16, name: "40# #5 Gloss Text (59 gsm)",             density:   59 },
+      { id: 17, name: "45# #5 Gloss Text (67 gsm)",             density:   67 },
+      { id: 18, name: "50# #5 Gloss Text (74 gsm)",             density:   74 },
+      { id: 19, name: "45# #5 Matte Text (67 gsm)",             density:   67 },
+      { id: 20, name: "38# #4 Gloss Text (56 gsm)",             density:   56 },
+      { id: 21, name: "40# #4 Gloss Text (59 gsm)",             density:   59 },
+      { id: 22, name: "45# #4 Gloss Text (67 gsm)",             density:   67 },
+      { id: 23, name: "50# #4 Gloss Text (74 gsm)",             density:   74 },
+      { id: 24, name: "45# #3 Gloss Text (67 gsm)",             density:   67 },
+      { id: 25, name: "50# #3 Gloss Text (74 gsm)",             density:   74 },
+      { id: 26, name: "60# #3 Gloss Text (89 gsm)",             density:   89 },
+      { id: 27, name: "70# #3 Gloss Text (104 gsm)",            density:  104 },
+      { id: 28, name: "80# #3 Gloss Text (118 gsm)",            density:  118 },
+      { id: 29, name: "100# #3 Gloss Text (148 gsm)",           density:  148 },
+      { id: 30, name: "45# #3 Matte Text (67 gsm)",             density:   67 },
+      { id: 31, name: "50# #3 Matte Text (74 gsm)",             density:   74 },
+      { id: 32, name: "60# #3 Matte Text (89 gsm)",             density:   89 },
+      { id: 33, name: "70# #3 Matte Text (104 gsm)",            density:  104 },
+      { id: 34, name: "80# #3 Matte Text (118 gsm)",            density:  118 },
+      { id: 35, name: "99# #3 Matte Text (146 gsm)",            density:  146 },
+      { id: 36, name: "100# #3 Matte Text (148 gsm)",           density:  148 },
+      { id: 37, name: "80# #2 Gloss Cover (216 gsm)",           density:  216 },
+      { id: 38, name: "100# #2 Gloss Cover (270 gsm)",          density:  270 },
+      { id: 39, name: "80# #2 Matte Cover (216 gsm)",           density:  216 },
+      { id: 40, name: "100# #2 Matte Cover (270 gsm)",          density:  270 }
+    ];
+  </script>
+
+  <script type="text/javascript">
+    var Calc = {
+      area: function(w, h)    { return (parseFloat(w) || 0) * (parseFloat(h) || 0) },
+      mass: function(a, d, n) { return (parseFloat(a) || 0) * (parseFloat(d) || 0) * (parseInt(n) || 0) },
+      inchesToMeters: function(inches) { return inches * 0.0254 },
+      metersToInches: function(meters) { return meters * 39.3701 },
+      gramsToPounds:  function(grams)  { return grams  * 0.00220462 },
+      poundsToGrams:  function(pounds) { return pounds * 453.592 }
+    }
+
+    var Format = {
+      numberWithCommas: function (n) {
+        var parts=n.toString().split(".");
+        return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (parts[1] ? "." + parts[1] : "");
+      }
+    }
+  </script>
+
+  <script type="text/javascript">
+    $(function(){
+
+      var Paper = Backbone.Model.extend({
+        defaults: function() {
+          return {
+            id: 0,
+            count: 0,
+            width: 0.21589999999999998, // 8.5 inches
+            height: 0.2794,             // 11 inches
+            paper_type_id: 1,
+            density: 0,
+            area: 0,
+            mass: 0,
+            weight: 0
+          };
+        },
+
+        initialize: function() {
+          this.update({});
+        },
+
+        update: function(attributes) {
+          this.set(attributes, {silent: true})
+
+          var area    = Calc.area(this.get("width"), this.get("height"));
+          var density = _.findWhere(PAPER_TYPES, {id: parseInt(this.get("paper_type_id"))}).density;
+          var mass    = Calc.mass(area, density, this.get("count"));
+          var weight  = Calc.gramsToPounds(mass);
+
+          this.set({
+            area:    area,
+            density: density,
+            mass:    mass,
+            weight:  weight
+          });
+        }
+      });
+
+
+      var PaperList = Backbone.Collection.extend({
+        model: Paper,
+        localStorage: new Backbone.LocalStorage("papers")
+      });
+
+
+      window.Papers = new PaperList;
+
+
+      var PaperView = Backbone.View.extend({
+        template: _.template($('#paper-template').html()),
+
+        events: {
+          'keyup input': "capture",
+          'change select': "capture",
+          'click .js-remove': "remove"
+        },
+
+        render: function() {
+          this.$el.html(this.template(this.model.toJSON()));
+          return this;
+        },
+
+        capture: function() {
+          this.model.update({
+            count:  parseInt(this.$('[name="count"]').val().replace(/[^\d.-]/g, '') || 0) / 2,
+            width:  Calc.inchesToMeters(parseFloat(this.$('[name="width"]').val().replace(/[^\d.-]/g, '')), 0.0),
+            height: Calc.inchesToMeters(parseFloat(this.$('[name="height"]').val().replace(/[^\d.-]/g, '')), 0.0),
+            paper_type_id: parseInt(this.$('[name="paper_type_id"]').val(), 0),
+          })
+        },
+
+        remove: function() {
+          this.model.destroy();
+          this.el.remove();
+        }
+      });
+
+
+      var PapersView = Backbone.View.extend({
+        el: $("#papers"),
+
+        initialize: function() {
+          this.listenTo(Papers, 'add', this.addOne);
+        },
+
+        render: function() {
+          this.$el.html("PapersView");
+          return this;
+        },
+
+        addOne: function(paper) {
+          paper.set({ id: Papers.indexOf(paper) + 1 }, {silent: true});
+          var view = new PaperView({model: paper});
+          this.$("#paper-list").append(view.render().el);
+        }
+      });
+
+
+      var Job = Backbone.Model.extend({
+        defaults: {
+          quantity: 10000
+        }
+      });
+
+
+      var Quote = Backbone.Model.extend({
+        defaults: function() {
+          return {
+            quantity:   0,
+            unitMass:   0,
+            unitWeight: 0,
+            mass:       0,
+            weight:     0,
+            pages:      0,
+            trees:      0,
+            price:      0,
+            papers:     []
+          };
+        },
+
+        initialize: function(attributes, options) {
+          this.job = options.job;
+          this.papers = options.papers;
+          this.listenTo(this.job,    'change', this.calculate);
+          this.listenTo(this.job,    'all',    this.calculate);
+          this.listenTo(this.papers, 'change', this.calculate);
+          this.listenTo(this.papers, 'all',    this.calculate);
+        },
+
+        calculate: function() {
+          var unitMass   = this.papers.pluck("mass").reduce(function(sum, el) { return sum + el }, 0);
+          var unitWeight = Calc.gramsToPounds(unitMass);
+          var mass       = unitMass * this.job.get("quantity");
+          var weight     = Calc.gramsToPounds(mass);
+          var pages      = mass / NormalizedPageMass;
+          var trees      = mass / TreeMass;
+          var price      = mass * GramPrice;
+
+          this.set({
+            quantity:   this.job.get("quantity"),
+            unitMass:   unitMass,
+            unitWeight: unitWeight,
+            mass:       mass,
+            weight:     weight,
+            pages:      pages,
+            trees:      trees,
+            price:      price,
+            papers:     this.papers.map(function(p) { return p.toJSON() })
+          });
+        },
+      });
+
+
+      var JobView = Backbone.View.extend({
+        el: $("#job"),
+
+        template: _.template($('#job-template').html()),
+
+        events: {
+          'keyup [name="quantity"]': "changeQuantity"
+        },
+
+        initialize: function() {
+          this.render();
+        },
+
+        render: function() {
+          this.$el.html(this.template(this.model.toJSON()));
+          return this;
+        },
+
+        changeQuantity: function(e) {
+          this.model.set({
+            quantity: parseInt($(e.target).val().replace(/[^\d.-]/g, ''))
+          })
+        }
+      });
+
+
+      var QuoteView = Backbone.View.extend({
+        el: $("#quote"),
+
+        template: _.template($('#quote-template').html()),
+
+        initialize: function() {
+          this.listenTo(this.model, 'change', this.render);
+        },
+
+        render: function() {
+          this.$el.html(this.template(this.model.toJSON()));
+          return this;
+        },
+      });
+
+
+      var AppView = Backbone.View.extend({
+        el: $("#calculatorapp"),
+
+        events: {
+          'click .js-add-paper': "addPaper",
+        },
+
+        initialize: function() {
+          this.job        = new Job;
+          this.quote      = new Quote({}, { job: this.job, papers: Papers });
+          this.jobView    = new JobView({ model: this.job });
+          this.papersView = new PapersView;
+          this.quoteView  = new QuoteView({ model: this.quote });
+        },
+
+        addPaper: function() {
+          Papers.add({});
+        }
+      });
+
+      window.App = new AppView;
+
+      Papers.add({count: 2,  width: 0.212725, height: 0.276225, paper_type_id: 37});
+      Papers.add({count: 40, width: 0.212725, height: 0.276225, paper_type_id: 26});
+    });
+  </script>
+</head>
+<body style="padding: 50px;">
+<div class="container">
+  <div class="row">
+    <div class="col-lg-12">
+      <img src="https://printreleaf.s3.amazonaws.com/printreleaf.png" />
+      <br /> <br /> <br />
+
+      <div id="calculatorapp">
+        <fieldset>
+          <legend>Job Specs</legend>
+
+          <div id="job">
+          </div>
+
+          <legend></legend>
+
+          <div id="papers">
+            <div class="row form-group">
+              <div class="col-sm-1">
+                <label>&nbsp;</label>
+              </div>
+              <div class="col-sm-2">
+                <label>Page count</label>
+              </div>
+              <div class="col-sm-4">
+                <label>Density</label>
+              </div>
+              <div class="col-sm-5">
+                <label>Trim Size <small style="opacity: 0.6">(W&times;H inches)</small></label>
+              </div>
+            </div>
+
+            <div id="paper-list">
+            </div>
+
+            <div class="row form-group">
+              <div class="col-sm-2 col-lg-offset-1">
+                <button type="button" class="btn btn-primary js-add-paper">Add Paper</button>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+
+        <fieldset>
+          <legend></legend>
+        </fieldset>
+
+        <div id="quote" class="col-sm-10 col-lg-offset-1">
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script type="text/template" id="paper-template">
+  <div class="row form-group">
+    <div class="col-sm-1">
+      <label>Paper <%= id %></label>
+    </div>
+    <div class="col-sm-2">
+      <input name="count" value="<%= count * 2 %>" class="form-control" type="text" />
+    </div>
+    <div class="col-sm-4">
+      <select class="form-control" name="paper_type_id">
+        <% _.each(PAPER_TYPES, function(paper_type) { %>
+          <% if (paper_type.id == paper_type_id) { %>
+            <option selected value="<%= paper_type.id %>"><%= paper_type.name %></option>
+          <% } else { %>
+            <option value="<%= paper_type.id %>"><%= paper_type.name %></option>
+          <% } %>
+        <% }); %>
+      </select>
+    </div>
+    <div class="col-sm-2">
+      <input name="width" value="<%= Calc.metersToInches(width).toFixed(4) %>" class="form-control" type="text" />
+    </div>
+    <div class="col-sm-2">
+      <input name="height" value="<%= Calc.metersToInches(height).toFixed(4) %>" class="form-control" type="text" />
+    </div>
+    <div class="col-sm-1">
+      <p class="form-control-static"><a href="#" class="js-remove">remove</a></p>
+    </div>
+  </div>
+</script>
+
+<script type="text/template" id="job-template">
+  <div class="row form-group">
+    <div class="col-sm-1">
+      <label>Quantity</label>
+    </div>
+    <div class="col-sm-2">
+      <input name="quantity" value="<%= Format.numberWithCommas(quantity) %>" class="form-control" type="text" />
+    </div>
+  </div>
+</script>
+
+<script type="text/template" id="quote-template">
+  <div class="well">
+    <h3>Quote</h3>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <td></td>
+          <td style="text-align: right"><strong>Qty</strong></td>
+          <td style="text-align: right"><strong>Width (m)</strong></td>
+          <td style="text-align: right"><strong>Height (m)</strong></td>
+          <td style="text-align: right"><strong>Area (m<sup>2</sup>)</strong></td>
+          <td style="text-align: right"><strong>Density (g/m<sup>2</sup>)</strong></td>
+          <td style="text-align: right"><strong>Mass (g)</strong></td>
+          <td style="text-align: right"><strong>Weight (lbs)</strong></td>
+        </tr>
+      </thead>
+      <tbody>
+        <% _.each(papers, function(paper) { %>
+          <tr>
+            <td>Paper <%= paper.id %></td>
+            <td style="text-align: right"><%= Format.numberWithCommas(paper.count) %></td>
+            <td style="text-align: right"><%= paper.width.toFixed(4) %></td>
+            <td style="text-align: right"><%= paper.height.toFixed(4) %></td>
+            <td style="text-align: right"><%= paper.area.toFixed(4) %></td>
+            <td style="text-align: right"><%= Format.numberWithCommas(paper.density.toFixed(3)) %></td>
+            <td style="text-align: right"><%= Format.numberWithCommas(paper.mass.toFixed(3)) %></td>
+            <td style="text-align: right"><%= Format.numberWithCommas(paper.weight.toFixed(3)) %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="1000" style="text-align: right">
+            <%= Format.numberWithCommas(unitMass.toFixed(3)) %>
+          </td>
+        </tr>
+      <tfoot>
+    </table>
+
+    <table class="table" style="width: 60%;">
+      <tr>
+        <td><strong>Quantity</strong></td>
+        <td style="text-align: right"><%= Format.numberWithCommas(quantity) %> units</td>
+      </tr>
+      <tr>
+        <td><strong>Unit Mass</strong></td>
+        <td style="text-align: right"><%= Format.numberWithCommas(unitMass.toFixed(3)) %> g</td>
+      </tr>
+      <tr>
+        <td><strong>Unit Weight</strong></td>
+        <td style="text-align: right"><%= Format.numberWithCommas(unitWeight.toFixed(3)) %> lbs</td>
+      </tr>
+      <tr>
+        <td><strong>Total Mass</strong></td>
+        <td style="text-align: right"><%= Format.numberWithCommas(mass.toFixed(3)) %> g</td>
+      </tr>
+      <tr>
+        <td><strong>Total Weight</strong></td>
+        <td style="text-align: right"><%= Format.numberWithCommas(weight.toFixed(3)) %> lbs</td>
+      </tr>
+      <tr>
+        <td><strong>Normalized Pages</strong></td>
+        <td style="text-align: right"><%= Format.numberWithCommas(pages.toFixed(0)) %> pgs</td>
+      </tr>
+      <tr>
+        <td><strong>Trees</strong></td>
+        <td style="text-align: right"><%= Format.numberWithCommas(trees.toFixed(3)) %></td>
+      </tr>
+      <tr>
+        <td><strong>Price</strong></td>
+        <td style="text-align: right">$<%= Format.numberWithCommas(price.toFixed(2)) %> AUD</td>
+      </tr>
+    </table>
+  </div>
+</script>
+
+</body>
+</html>
+
