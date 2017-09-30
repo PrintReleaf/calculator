@@ -69,9 +69,9 @@
       { pages:   25000000, rate: 0.00011 },
       { pages:   50000000, rate: 0.00010 },
       { pages:  100000000, rate: 0.00009 },
-      { pages:  250000000, rate: 0.00008 },
-      { pages:  500000000, rate: 0.00007 },
-      { pages: 1000000000, rate: 0.00006 }
+      { pages:  250000000, rate: 0.000085 },
+      { pages:  500000000, rate: 0.000080 },
+      { pages: 1000000000, rate: 0.000075 }
     ]
   </script>
 
@@ -473,7 +473,7 @@
             <% _.each(tiers, function(tier) { %>
               <tr class="<%= tier.rate == rate ? 'success' : '' %>">
                 <td style="text-align: right"><%= Format.numberWithCommas(tier.pages) %></td>
-                <td style="text-align: right">$<%= Format.numberWithCommas(tier.rate.toFixed(5)) %></td>
+                <td style="text-align: right">$<%= Format.numberWithCommas(tier.rate.toFixed(6)) %></td>
               </tr>
             <% }); %>
           </tbody>
@@ -516,7 +516,7 @@
         <table class="table">
           <tr>
             <td><strong>Rate</strong></td>
-            <td style="text-align: right">$<%= Format.numberWithCommas(rate.toFixed(5)) %> / page</td>
+            <td style="text-align: right">$<%= Format.numberWithCommas(rate.toFixed(6)) %> / page</td>
           </tr>
           <tr>
             <td><strong>Price</strong></td>
